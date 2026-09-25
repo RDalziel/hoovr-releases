@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HoovR: a fast formatter and linter for R</title>
+<meta name="description" content="HoovR formats and lints R code with styler's layout and lintr's rules, and scores code health against budgets. One executable for Windows and Linux, written in Rust, two to three orders of magnitude faster than lintr and styler.">
+<meta name="keywords" content="R, R language, linter, formatter, lintr alternative, styler alternative, code health, cyclomatic complexity, R Markdown, Quarto, CI, Rust">
+<meta name="robots" content="index,follow">
+<meta name="color-scheme" content="light dark">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="HoovR">
+<meta property="og:title" content="HoovR: a fast formatter and linter for R">
+<meta property="og:description" content="styler's layout, lintr's rules and a code-health ratchet, in one executable. Two to three orders of magnitude faster than the R tools.">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232563eb'/%3E%3Ctext x='16' y='23' font-family='Arial,Helvetica,sans-serif' font-size='19' font-weight='700' text-anchor='middle' fill='white'%3ER%3C/text%3E%3C/svg%3E">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "HoovR",
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "Windows, Linux",
+  "description": "A formatter, linter and code-health scorer for R, written in Rust.",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "license": "https://github.com/RDalziel/hoovr-releases/blob/main/LICENSE",
+  "downloadUrl": "https://github.com/RDalziel/hoovr-releases/releases",
+  "softwareHelp": "https://github.com/RDalziel/hoovr-releases"
+}
+</script>
+<style>
+  :root {
+    --bg: #fbfbfd; --panel: #ffffff; --panel-2: #f3f5f9; --ink: #111827; --muted: #4b5563;
+    --line: #e2e6ee; --accent: #2563eb; --accent-ink: #ffffff; --accent-soft: #e8efff;
+    --good: #0f766e; --code-bg: #0f172a; --code-ink: #e2e8f0; --code-dim: #94a3b8;
+    --warn-bg: #fff7e6; --warn-line: #f2c46d; --warn-ink: #7a4b00;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0b0f17; --panel: #121826; --panel-2: #0f1522; --ink: #e6edf5; --muted: #9aa8bb;
+      --line: #223047; --accent: #6ea0ff; --accent-ink: #06122b; --accent-soft: #16223a;
+      --good: #4fd1b5; --code-bg: #070b12; --code-ink: #d7e3f2; --code-dim: #7f8ea3;
+      --warn-bg: #2a2110; --warn-line: #7a5a1c; --warn-ink: #f3cf85;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0b0f17; --panel: #121826; --panel-2: #0f1522; --ink: #e6edf5; --muted: #9aa8bb;
+    --line: #223047; --accent: #6ea0ff; --accent-ink: #06122b; --accent-soft: #16223a;
+    --good: #4fd1b5; --code-bg: #070b12; --code-ink: #d7e3f2; --code-dim: #7f8ea3;
+    --warn-bg: #2a2110; --warn-line: #7a5a1c; --warn-ink: #f3cf85;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code, pre { font-family: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace; }
+  p code, li code, td code { font-size: .92em; background: var(--panel-2); border: 1px solid var(--line); border-radius: 5px; padding: 0 4px; }
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 0 16px; }
+  header { border-bottom: 1px solid var(--line); background: var(--panel); }
+  .nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; flex-wrap: wrap; }
+  .brand { font-weight: 800; letter-spacing: -.2px; font-size: 18px; color: var(--ink); }
+  .brand span { color: var(--accent); }
+  .nav nav { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 14px; }
+  .nav nav a { color: var(--muted); }
+  .hero { padding: 56px 0 32px; }
+  h1 { font-size: clamp(30px, 5.2vw, 48px); line-height: 1.1; letter-spacing: -.8px; margin: 0 0 16px; }
+  h1 em { font-style: normal; color: var(--accent); }
+  .lede { font-size: 19px; color: var(--muted); max-width: 720px; margin: 0 0 24px; }
+  .cta { display: flex; flex-wrap: wrap; gap: 10px; }
+  .btn { display: inline-block; padding: 10px 18px; border-radius: 9px; font-weight: 600; font-size: 15px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
+  .btn.primary { background: var(--accent); border-color: transparent; color: var(--accent-ink); }
+  .btn:hover { text-decoration: none; filter: brightness(1.05); }
+  pre.term {
+    background: var(--code-bg); color: var(--code-ink); border-radius: 10px; padding: 14px 16px;
+    overflow-x: auto; font-size: 13.5px; line-height: 1.55; margin: 12px 0; border: 1px solid var(--line);
+  }
+  pre.term .dim { color: var(--code-dim); }
+  pre.term .prompt { color: var(--good); user-select: none; }
+  section { padding: 40px 0; border-top: 1px solid var(--line); }
+  h2 { font-size: 25px; letter-spacing: -.3px; margin: 0 0 8px; }
+  .sub { color: var(--muted); margin: 0 0 22px; max-width: 760px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 14px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; min-width: 0; }
+  .card h3 { margin: 0 0 6px; font-size: 16px; }
+  .card h3 code { background: none; border: 0; padding: 0; color: var(--accent); font-size: 15px; }
+  .card p { margin: 0 0 8px; color: var(--muted); font-size: 14.5px; }
+  .card pre.term { font-size: 12.5px; }
+  .pill { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; border-radius: 999px; padding: 2px 8px; margin-left: 6px; vertical-align: 2px; background: var(--accent-soft); color: var(--accent); }
+  .pill.wait { background: var(--warn-bg); color: var(--warn-ink); }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 18px; }
+  .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
+  .stat .n { font-size: 30px; font-weight: 800; letter-spacing: -.5px; color: var(--accent); line-height: 1.15; font-variant-numeric: tabular-nums; }
+  .stat .l { font-size: 14px; color: var(--muted); margin-top: 4px; }
+  .table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th { font-weight: 600; color: var(--muted); background: var(--panel-2); }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tr:last-child td { border-bottom: 0; }
+  .note { background: var(--warn-bg); border: 1px solid var(--warn-line); color: var(--warn-ink); border-radius: 10px; padding: 12px 14px; font-size: 14.5px; margin: 16px 0 0; }
+  ul.plain { padding-left: 20px; color: var(--muted); margin: 0; }
+  ul.plain li { margin: 6px 0; }
+  footer { border-top: 1px solid var(--line); padding: 26px 0 40px; color: var(--muted); font-size: 14px; }
+  footer a { color: var(--muted); text-decoration: underline; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px 22px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap nav">
+    <div class="brand">Hoov<span>R</span></div>
+    <nav aria-label="Sections">
+      <a href="#install">Install</a>
+      <a href="#what">What it does</a>
+      <a href="#measured">Measured</a>
+      <a href="#docs">Docs</a>
+      <a href="https://github.com/RDalziel/hoovr-releases/releases">Releases</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero" style="border-top:none">
+    <h1>A fast formatter and linter for <em>R</em>.</h1>
+    <p class="lede">HoovR lays R out the way styler does, checks it with every lintr default
+      linter, and scores code health against budgets that fail a build when it gets worse.
+      One executable, nothing else to install, and two to three orders of magnitude faster
+      than the R tools.</p>
+    <div class="cta">
+      <a class="btn primary" href="#install">Install</a>
+      <a class="btn" href="https://github.com/RDalziel/hoovr-releases/blob/main/docs/usage.md">Usage</a>
+      <a class="btn" href="https://github.com/RDalziel/hoovr-releases/releases">Releases</a>
+    </div>
+    <pre class="term" aria-label="Example output of hoovr lint"><span class="prompt">$ </span>hoovr lint R/
+R/model.R:2:13: HR0004 Use `seq_along(x)` instead of `1:length(x)`, which is wrong when the input is empty
+R/model.R:3:18: HR0005 Use `&amp;&amp;` in a condition, not `&amp;`
+R/model.R:4:12: HR0001 Use `&lt;-` for assignment, not `=`
+<span class="dim">3 findings (3 fixable with `--fix`)</span></pre>
+  </section>
+
+  <section id="install">
+    <h2>Install</h2>
+    <p class="sub">Windows x64 and Linux x86-64. macOS is not supported in 1.0.
+      <a href="https://github.com/RDalziel/hoovr-releases/blob/main/docs/install.md">Full instructions</a>,
+      including checking a download, updating and uninstalling.</p>
+    <div class="grid">
+      <div class="card">
+        <h3>Windows <span class="pill wait">winget pending</span></h3>
+        <p>Submitted to the Windows Package Manager and waiting for review. Until it is
+          listed, download the zip from the releases page.</p>
+        <pre class="term">winget install HoovR.HoovR</pre>
+      </div>
+      <div class="card">
+        <h3>Linux</h3>
+        <p>One static binary for any glibc or musl distribution. Check it against the
+          release's <code>SHA256SUMS</code>, then put it on your <code>PATH</code>.</p>
+        <pre class="term">sha256sum -c SHA256SUMS --ignore-missing
+unzip hoovr-*-x86_64-unknown-linux-musl.zip
+install -m 755 hoovr-*-linux-musl/hoovr ~/.local/bin/</pre>
+      </div>
+      <div class="card">
+        <h3>R users</h3>
+        <p>The <code>hoovr</code> package, under lintr's and styler's function names.
+          Its source is on each release from 1.0.0; plain R, no compiler needed.</p>
+        <pre class="term">install.packages("jsonlite")
+install.packages(
+  "https://github.com/RDalziel/hoovr-releases/releases/download/v1.0.0/hoovr_1.0.0.tar.gz",
+  repos = NULL, type = "source")
+hoovr::install_hoovr()</pre>
+      </div>
+    </div>
+  </section>
+
+  <section id="what">
+    <h2>What it does</h2>
+    <p class="sub">Three tools over one parser, for R files, R Markdown and Quarto
+      documents. Configuration is one <code>hoovr.toml</code>; exit codes are
+      <code>0</code> clean, <code>1</code> findings, <code>2</code> could not run.</p>
+    <div class="grid">
+      <div class="card">
+        <h3><code>hoovr format</code></h3>
+        <p>Tidyverse layout. By default it changes layout only, never tokens, and never
+          loses a comment. <code>--profile styler-compatible</code> makes styler's
+          decisions, token rewrites included.</p>
+        <pre class="term">hoovr format R/
+hoovr format --check .   <span class="dim"># CI gate</span></pre>
+      </div>
+      <div class="card">
+        <h3><code>hoovr lint</code></h3>
+        <p>Every lintr default linter, plus rules of its own, with fixes where the edit
+          cannot change what the code does. lintr's <code># nolint</code> comments work
+          as written.</p>
+        <pre class="term">hoovr lint --fix R/
+hoovr lint --format github .</pre>
+      </div>
+      <div class="card">
+        <h3><code>hoovr metrics</code></h3>
+        <p>Cyclomatic and cognitive complexity, nesting, size and more against budgets,
+          with a committed baseline that fails a build only when a number gets worse.</p>
+        <pre class="term">hoovr metrics --update-baseline
+hoovr metrics --check</pre>
+      </div>
+    </div>
+    <p class="sub" style="margin-top:22px">Moving from lintr or styler?
+      <code>--profile lintr-compatible</code> reports lintr's findings where HoovR would
+      differ on purpose. The guide covers
+      <a href="https://github.com/RDalziel/hoovr-releases/blob/main/docs/usage.md#migrating-from-lintr">translating a <code>.lintr</code></a>
+      and <a href="https://github.com/RDalziel/hoovr-releases/blob/main/docs/usage.md#migrating-from-styler">replacing styler</a>.</p>
+  </section>
+
+  <section id="measured">
+    <h2>Measured, not claimed</h2>
+    <p class="sub">Every figure comes from running lintr and styler themselves on the same
+      files. <a href="https://github.com/RDalziel/hoovr-releases/blob/main/docs/measurements.md">Measurements</a>
+      gives the method and the caveats.</p>
+    <div class="stats">
+      <div class="stat"><div class="n">95.4%</div><div class="l">of 2,414 real R files byte-identical with styler 1.11.0, using HoovR's styler-compatible profile, across twelve packages</div></div>
+      <div class="stat"><div class="n">99.55%</div><div class="l">of 13,925 real lintr 3.4.0 findings agreed, using HoovR's lintr-compatible profile (98.64% with its default profile), across eleven packages</div></div>
+      <div class="stat"><div class="n">195–697×</div><div class="l">faster than lintr, on four tidyverse packages</div></div>
+      <div class="stat"><div class="n">939–4,909×</div><div class="l">faster than styler at checking formatting</div></div>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>Package</th><th class="num">Files</th><th class="num">hoovr lint</th><th class="num">lintr</th><th class="num">hoovr format --check</th><th class="num">styler</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>withr</td><td class="num">58</td><td class="num">22 ms</td><td class="num">4.39 s</td><td class="num">15 ms</td><td class="num">14.13 s</td></tr>
+          <tr><td>stringr</td><td class="num">67</td><td class="num">25 ms</td><td class="num">7.43 s</td><td class="num">16 ms</td><td class="num">17.32 s</td></tr>
+          <tr><td>tibble</td><td class="num">114</td><td class="num">51 ms</td><td class="num">13.77 s</td><td class="num">27 ms</td><td class="num">82.81 s</td></tr>
+          <tr><td>dplyr</td><td class="num">195</td><td class="num">56 ms</td><td class="num">38.97 s</td><td class="num">30 ms</td><td class="num">148.03 s</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">These are measurements of a build, not promises, and they are
+      refreshed when a release is re-measured. All of them were taken on 25 September 2026
+      with the HoovR 1.0.0 release candidate (which reported itself as 0.1.1, before its
+      version number was set), against lintr 3.4.0 and styler 1.11.0 on R 4.6.1. The speed
+      figures are on x86-64 Linux with 16 CPUs, each tool doing its own default work;
+      HoovR's time is the fastest of five runs, lintr's and styler's one run each.
+      styler's dplyr run leaves out <code>data-raw/starwars.R</code>, on which styler does
+      not finish, so it covers 194 of the 195 files. No
+      figure is published against air, whose HoovR profile is experimental, against the
+      other Rust tools for R, or for macOS.</p>
+  </section>
+
+  <section id="stable">
+    <h2>Stable across 1.x</h2>
+    <ul class="plain">
+      <li>Commands, flags, exit codes, <code>hoovr.toml</code> keys, JSON output version 1, and rule codes and names.</li>
+      <li>Formatter layout changes only in a minor release, and every change is listed in the release notes.</li>
+      <li>New rules arrive switched off, so an upgrade does not add findings on its own.</li>
+    </ul>
+    <p class="sub" style="margin-top:12px"><a href="https://github.com/RDalziel/hoovr-releases/blob/main/docs/stability.md">The full promise</a>.</p>
+  </section>
+
+  <section id="docs">
+    <h2>Documentation</h2>
+    <div class="grid">
+      <div class="card"><h3><a href="https://github.com/RDalziel/hoovr-releases/blob/main/docs/install.md">Install</a></h3><p>Windows, Linux and the R package; checking, updating, uninstalling.</p></div>
+      <div class="card"><h3><a href="https://github.com/RDalziel/hoovr-releases/blob/main/docs/usage.md">Usage</a></h3><p>Commands, profiles, configuration, CI, editors, output formats, migrating.</p></div>
+      <div class="card"><h3><a href="https://github.com/RDalziel/hoovr-releases/blob/main/docs/rules.md">Rules</a></h3><p>Every rule and budget, with its lintr equivalent.</p></div>
+      <div class="card"><h3><a href="https://github.com/RDalziel/hoovr-releases/blob/main/docs/code-health.md">Code health</a></h3><p>The budgets, how each is counted, and the ratchet.</p></div>
+      <div class="card"><h3><a href="https://github.com/RDalziel/hoovr-releases/blob/main/RELEASES.md">Release notes</a></h3><p>What changed in each release, in plain English.</p></div>
+      <div class="card"><h3><a href="https://github.com/RDalziel/hoovr-releases/issues">Issues</a></h3><p>Bugs and questions. Security problems: <a href="https://github.com/RDalziel/hoovr-releases/blob/main/SECURITY.md">report privately</a>.</p></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap row">
+    <span>HoovR is MIT licensed; see <a href="https://github.com/RDalziel/hoovr-releases/blob/main/LICENSE">LICENSE</a> and <a href="https://github.com/RDalziel/hoovr-releases/blob/main/NOTICE">NOTICE</a>.</span>
+    <a href="https://github.com/RDalziel/hoovr-releases">github.com/RDalziel/hoovr-releases</a>
+  </div>
+</footer>
+</body>
+</html>

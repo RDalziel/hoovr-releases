@@ -1,0 +1,73 @@
+HoovR
+Copyright (c) 2026 HoovR contributors
+Licensed under the MIT License; see LICENSE.
+
+The hoovr binary is written in Rust. To agree with lintr and styler it reimplements
+parts of them, and some of that is close enough to their code, or copies their data,
+that it is credited here. The Rust crates the binary is built with are credited
+separately, in THIRD-PARTY-LICENSES in each release zip. The R package hoovr, which
+downloads and runs the binary, carries this notice too; its own R code contains none of
+what is listed below.
+
+
+lintr (https://github.com/r-lib/lintr), version 3.4.0
+Copyright (c) 2014-2025 lintr authors. MIT License, text below.
+
+  - Ported from lintr's linters, step for step over R's parse-data tree: the default
+    configuration of indentation_linter; three of brace_linter's checks;
+    return_linter's implicit style; spaces_inside_linter and
+    spaces_left_parentheses_linter; object_name_linter's object_name_xpath; and
+    implicit_assignment_linter's implicit_assignment_xpath.
+  - Copied from lintr: the special_funs list, and the .base_s3_generics table of the
+    generics whose methods object_name_linter and object_length_linter exempt.
+
+
+styler (https://github.com/r-lib/styler), version 1.11.0
+Copyright (c) 2021 styler authors. MIT License, text below.
+
+  - Ported from styler: token_is_on_aligned_line(), the test for whether code is
+    aligned in columns, which the formatter uses to keep that alignment.
+
+
+rex (https://github.com/r-lib/rex), version 1.2.2
+Copyright (c) 2014-2016 James Hester and Kevin Ushey. MIT License, text below.
+
+  - Copied from rex: the names of its shortcuts (ls(rex:::.rex$env)), which a package
+    that calls rex::register_shortcuts() declares as global variables.
+
+
+R (https://www.r-project.org), version 4.6.1
+
+  - A list of the names exported by the packages that ship with R (base, stats, utils,
+    methods, graphics, grDevices, tools, parallel, compiler, grid, splines, stats4)
+    and of its datasets, generated from R's own namespaces, so that undefined-name
+    checks know which names exist. It is a list of names only; no R source code is
+    included.
+
+
+air (https://github.com/posit-dev/air)
+
+  - The experimental air-compatible format profile is written to reproduce air's
+    output, and is tested against output that air itself produced. No air source code
+    or data is included.
+
+
+The MIT License, under which lintr, styler and rex are distributed, each with the
+copyright line given above:
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy of
+  this software and associated documentation files (the "Software"), to deal in the
+  Software without restriction, including without limitation the rights to use,
+  copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the
+  Software, and to permit persons to whom the Software is furnished to do so,
+  subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+  FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+  COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN
+  AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

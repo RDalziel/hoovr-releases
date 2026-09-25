@@ -1,0 +1,152 @@
+# An example hoovr.toml. It lists every key HoovR accepts, each set to its default,
+# so a copy of it changes nothing until a value is edited. usage.md#every-key is the
+# reference.
+#
+# Unknown keys are an error, not a shrug: a typo should not silently leave the default
+# in place. So a key added in a later release is an error in an earlier one, and a
+# project that uses one says which HoovR it needs, checked before anything else here:
+# `>=1.1`, `>=1.1, <2`, or a bare version for exactly that one.
+# required-version = ">=1.0"
+
+# Gitignore-style patterns, relative to this file, for files a directory walk leaves
+# out, on top of .gitignore and .ignore. A file named on the command line is still
+# used. The defaults are R that a tool writes: Rcpp, cpp11, usethis::use_standalone().
+# Setting this replaces them.
+exclude = ["**/R/RcppExports.R", "**/R/cpp11.R", "**/R/import-standalone-*.R"]
+
+[format]
+# These keys set the `default` profile. `hoovr format --profile` swaps the layout
+# decisions for a fixed set and keeps line-width, indent-width, indent-style and
+# line-ending from here: `opinionated`, `styler-compatible`, or `air-compatible`, which
+# is experimental, outside the 1.x layout promise, and not yet measured against air.
+
+# Columns the formatter aims for, 20 to 500. A soft target: a long string literal
+# cannot be broken and will not be mangled to meet the number.
+line-width = 80
+# 1 to 16.
+indent-width = 2
+# "space" or "tab".
+indent-style = "space"
+# "auto" keeps whatever the file already used, which is what makes the formatter
+# usable in a CRLF repository. "lf" and "crlf" force one.
+line-ending = "auto"
+# Runs of blank lines longer than this collapse.
+blank-lines-max = 2
+# Keep a bracketed construct broken when the author wrote it that way. This is what
+# styler does, and turning it off gives fully opinionated output that depends only
+# on the code.
+persistent-line-breaks = true
+# Break a construct that exceeds line-width. styler does not do this; the
+# styler-compatible profile turns it off.
+wrap-long-lines = true
+# "preserve" or "arrow". The formatter changes layout, not tokens: `=` assignment is
+# the `assignment` lint rule's business, and it carries the same fix.
+assignment-operator = "preserve"
+# "preserve" or "double". Same reasoning; see the `single-quotes` rule.
+quote-style = "preserve"
+# Wrap a braceless `if`/`for`/`while` body in `{ }`: "preserve", "multiline"
+# (styler's rule: a multi-line body or a `return()`) or "always" (air's rule; its
+# layout is experimental, like the air-compatible profile). A token rewrite, so off.
+brace-bodies = "preserve"
+# Put a space after a comment's `#` when there is one `#` and no space, as styler does.
+# Off: it edits the words of a comment, not the layout.
+space-after-comment-hash = false
+# styler's hanging layout for `fn(data, arg = value)`. Off by default: breaking
+# after `(` unconditionally is one rule instead of three.
+hanging-call-arguments = false
+# Move a comment after an opening `{` to its own line inside the block, as air does.
+# Experimental when on, like the air-compatible profile.
+brace-comment-on-own-line = false
+# How a bracketed list breaks: "positions" keeps the author's break positions, as
+# styler does; "expanded" is air's model, where one break after the opening bracket
+# puts every argument on its own line. "expanded" is experimental, like the
+# air-compatible profile.
+bracket-breaks = "positions"
+# Break a chain of two or more `|>` or `%>%` after every pipe, as styler does. Off by
+# default: a short chain on one line is not a problem to solve.
+break-pipe-chains = false
+# Keep an indented R Markdown or Quarto chunk's code under its fence, so a chunk in a
+# list item stays in it. styler moves the code to the margin.
+keep-chunk-indent = true
+# Keep the spaces that line a broken argument list up in columns (`a   = 1` over
+# `bcd = 2`, a tribble's cells), by styler's own detection. air normalises them.
+keep-alignment = true
+# Make a bare name on the right of `%>%` a call, `x %>% f()`, as styler does. A token
+# rewrite, so off by default.
+pipe-call-parens = false
+
+[lint]
+# Empty means every default-on rule; an opt-in rule runs only when named here. Both
+# accept a rule name (`assignment`) or an id (`HR0001`), in any case.
+select = []
+ignore = []
+# Where `line-length` reports, 20 to 500. Shared with [format] line-width when
+# overridden on the command line.
+line-length = 80
+# The longest name `object-length` accepts.
+object-name-max = 30
+# `# nolint` comments are honoured unless a CI job wants the unfiltered picture.
+respect-nolint = true
+# The written values `magic-number` (opt-in) accepts without a name, `L` dropped.
+allowed-magic-numbers = ["-1", "0", "1", "2"]
+# S3 generics this project defines. `object-name` exempts `print.myclass` from
+# snake_case because the dot is dispatch; it can only do that for generics it knows.
+extra-s3-generics = []
+# Functions that read `{name}` out of their strings, so `unused-local` counts those
+# names as used. Setting this replaces the list; a project's own glue wrapper goes here.
+interpolating-functions = [
+  "cli_abort",
+  "cli_alert",
+  "cli_alert_danger",
+  "cli_alert_info",
+  "cli_alert_success",
+  "cli_alert_warning",
+  "cli_bullets",
+  "cli_h1",
+  "cli_h2",
+  "cli_h3",
+  "cli_inform",
+  "cli_li",
+  "cli_text",
+  "cli_warn",
+  "format_error",
+  "format_inline",
+  "format_message",
+  "format_warning",
+  "glue",
+  "glue_col",
+  "glue_data",
+  "glue_sql",
+  "str_glue",
+  "str_glue_data",
+]
+# Reproduce lintr's findings where HoovR differs from it on purpose, as
+# `hoovr lint --profile lintr-compatible` does. For a project moving from lintr.
+lintr-compatible = false
+# Read the R libraries installed on this machine (an renv project's own library
+# first): what a `library()`'d or imported package exports, and whether it is
+# installed. `false` reads none, so the findings are the same on every machine; the
+# rules that would need a package's exports then say nothing about names it could hold.
+r-libraries = true
+
+# Per-rule severity overrides, by name or id. "style", "warning" or "error".
+[lint.severity]
+# equals-na = "error"
+
+# Functions to flag, mapped to the reason the message shows. Setting this REPLACES
+# the built-in list rather than adding to it, so a project can disagree with our
+# choices without un-setting them one at a time; an empty table flags nothing.
+# Commented out here, which leaves the built-in list in force.
+# [lint.undesirable-functions]
+# sapply = "its return type depends on the data; use `vapply` with an explicit FUN.VALUE"
+
+[metrics]
+# Every budget is an EXCLUSIVE upper bound: a function scoring exactly 22 is over.
+# Each is 1 or more.
+cyclomatic = 22
+cognitive = 22
+nesting-depth = 5
+parameters = 6
+function-lines = 100
+file-lines = 500
+halstead-difficulty = 30
