@@ -43,6 +43,9 @@ rule: the two tools made different choices about what is worth reporting.
 | `HR0018` | `package-not-installed` | yes | warning | — | `object_usage_linter/unresolved-package` | Load only packages that are installed |
 | `HR0300` | `no-comments` | opt-in | style | — | — | Explain code with names, not comments |
 | `HR0301` | `magic-number` | opt-in | style | — | — | Give a numeric literal a name |
+| `HR0020` | `unreachable-code` | opt-in | warning | — | `unreachable_code_linter` | Remove code that can never run |
+| `HR0021` | `unused-import` | opt-in | warning | — | `unused_import_linter` | Attach only packages the file uses |
+| `HR0022` | `unused-function` | opt-in | warning | — | — | Remove a package function nothing uses |
 | `HR0008` | `semicolon` | yes | style | yes | `semicolon_linter` | Separate statements with a newline, not `;` |
 | `HR0009` | `single-quotes` | yes | style | yes | `quotes_linter` | Prefer `"` for string literals |
 | `HR0103` | `infix-spaces` | yes | style | yes | `infix_spaces_linter` | Put spaces around infix operators |
@@ -76,3 +79,10 @@ rule: the two tools made different choices about what is worth reporting.
 | `HR9004` | `parameters` | < 6 | function |
 | `HR9005` | `function-lines` | < 100 | function |
 | `HR9006` | `file-lines` | < 500 | file |
+| `HR9008` | `maintainability` | >= 31 | function |
+| `HR9009` | `duplicate-bodies` | < 1 | file |
+| `HR9010` | `dynamic-evaluation` | < 4 | file |
+| `HR9011` | `dead-code` | < 2 | file |
+| `HR9012` | `coverage` | >= 80 | file |
+| `HR9013` | `crap` | < 25 | function |
+| `HR9014` | `surviving-mutants` | < 1 | file |

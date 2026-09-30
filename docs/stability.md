@@ -166,15 +166,20 @@ styler is a layout change (see [Formatter layout](#formatter-layout)).
 ### Metrics
 
 How a metric is counted (cyclomatic and cognitive complexity, nesting depth, parameter
-count, function and file lines, Halstead difficulty) and the default budgets change
-only in a minor release, listed in the release notes. A project commits its baseline, so a
-patch release that recounted a metric would fail `hoovr metrics --check` for code that
-did not change.
+count, function and file lines, Halstead difficulty, maintainability index, duplicate
+bodies, dynamic evaluation, dead code, line coverage, CRAP, surviving mutants) and the default budgets change only in a minor release, listed in the release notes. A project
+commits its baseline, so a patch release that recounted a metric would fail
+`hoovr metrics --check` for code that did not change.
 
 A new code-health budget (`HR9xxx`) likewise arrives only in a minor release, listed in
 the release notes, and default-off, as a new rule does: `hoovr lint` reports it only when a
 project names it in `select` or `--select`, until a later minor release switches it on
-by default. The seven budgets in 1.0 are all on by default.
+by default. The seven budgets in 1.0 are all on by default. `dead-code` (`HR9011`),
+`coverage` (`HR9012`), `crap` (`HR9013`) and `surviving-mutants` (`HR9014`) are the
+exceptions: `hoovr metrics` rows measured only with `--include-dead-code`, `--coverage`
+or `--mutation`, which `hoovr lint` cannot
+measure and refuses to select; `dead-code`'s count comes from the `unreachable-code` and
+`unused-import` rules.
 
 ## Deprecation
 

@@ -91,6 +91,7 @@ respect-nolint = true
 allowed-magic-numbers = ["-1", "0", "1", "2"]
 # S3 generics this project defines. `object-name` exempts `print.myclass` from
 # snake_case because the dot is dispatch; it can only do that for generics it knows.
+# `unused-function` (opt-in) counts their methods as used.
 extra-s3-generics = []
 # Functions that read `{name}` out of their strings, so `unused-local` counts those
 # names as used. Setting this replaces the list; a project's own glue wrapper goes here.
@@ -142,7 +143,7 @@ r-libraries = true
 
 [metrics]
 # Every budget is an EXCLUSIVE upper bound: a function scoring exactly 22 is over.
-# Each is 1 or more.
+# Each is 1 or more. The exceptions are maintainability-index and coverage, below.
 cyclomatic = 22
 cognitive = 22
 nesting-depth = 5
@@ -150,3 +151,22 @@ parameters = 6
 function-lines = 100
 file-lines = 500
 halstead-difficulty = 30
+# A FLOOR, like coverage and unlike every other budget: a function scoring below it
+# is over; exactly 31 is within. Above 0, up to 100.
+maintainability-index = 31
+# Per file: fewer than this many copies of a function body. 1 means none.
+duplicate-bodies = 1
+# Per file: fewer than this many `eval(parse())`s, computed `get()`/`assign()` names,
+# `attach()`es and `<<-`s.
+dynamic-evaluation = 4
+# Per file: fewer than this many `unreachable-code` and `unused-import` findings.
+# Only measured by `hoovr metrics --include-dead-code`.
+dead-code = 2
+# Per file, from `hoovr metrics --coverage`: a FLOOR on the percentage of coverable lines
+# the tests ran; below it is over, exactly 80 is within. Above 0, up to 100.
+coverage = 80
+# Per function, from `hoovr metrics --coverage`: CRAP, cc^2 x (1 - coverage)^3 + cc.
+crap = 25
+# Per file, from `hoovr metrics --mutation`: fewer than this many mutants the tests did
+# not catch. 1 means none.
+surviving-mutants = 1

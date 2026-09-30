@@ -5,6 +5,95 @@ What changed in each release, in plain English, newest first. Downloads are on t
 
 ## Unreleased
 
+## 1.1.0
+
+`lintr-compatible` and `styler-compatible` are still matched against lintr 3.4.0 and
+styler 1.11.0, as in 1.0.0.
+
+Three new rules for dead code, all switched off until you ask for them:
+
+- `unreachable-code` finds code that can never run: anything after a `return()`,
+  `stop()`, `next` or `break` in the same block, and the branch that `if (FALSE)` or
+  `if (TRUE) ... else` rules out.
+- `unused-import` finds a `library()` or `require()` whose package the file never uses.
+- `unused-function` finds a function in a package's `R/` folder that the package neither
+  exports nor uses anywhere.
+
+The first two are ports of lintr's `unreachable_code_linter` and `unused_import_linter`, and
+report nothing lintr does not on real packages. They differ on purpose in a few places:
+`unreachable-code` does not flag the punctuation after a nested `return()` or `stop()`,
+and `unused-import` stays silent about a package it cannot read, one that ships
+datasets, and data.table, bit64 and tidyverse. Turn them on with
+`select = ["unreachable-code", "unused-import"]` in `hoovr.toml`, or
+`hoovr lint --select unreachable-code,unused-import`.
+
+`unused-function` is HoovR's own. R code often reaches a function through its name as
+text, so the rule counts a function as used whenever its name could be meant: in
+`NAMESPACE`, anywhere in the package's R code, in any string or roxygen comment there,
+anywhere else in the package (tests, vignettes, documentation and the rest), or as the
+start (ending in `_` or `.`) or end (beginning with one) of a name built with
+`paste0()`. It also leaves alone the functions other tools call by name, such as the
+`release_bullets()` that usethis reads, and a function that only names other packages'
+functions so that R CMD check counts them as used. It only looks inside a package, reads the
+whole package even to lint one file, and says nothing when `NAMESPACE` exports by
+pattern. It reads the package's compiled code too, since C or C++ can call an R
+function by name. Every function it reported in three well-known R packages was checked
+by hand and is genuinely unused. Turn it on with `select = ["unused-function"]`.
+
+`hoovr metrics` has a new row, the maintainability index: one score from 0 to 100 for
+each function, from its size, branching and length. Lower is worse, and a function
+scoring under 31 is over budget; 31 comes from measuring real R packages. `hoovr lint`
+reports it only if you name it: `select = ["maintainability"]`. A
+`health-baseline.json` from 1.0 keeps working; run `hoovr metrics --update-baseline` to
+start tracking the new row.
+`hoovr rules --format json` gains a `floor` field on each budget, `true` for the
+maintainability index and coverage, and `hoovr rules` shows their budgets as `>=31` and
+`>=80`.
+
+A new `duplicate-bodies` row counts functions in the same file whose bodies are the same
+code, ignoring spacing and comments. Each copy is reported at its own line, naming the
+function it copies. The budget is none per file; `hoovr lint` reports it only if you name
+it: `select = ["duplicate-bodies"]`.
+
+A new `dynamic-evaluation` row counts code whose meaning can't be read from the source:
+`eval(parse(text = ...))`, `get()`/`assign()`/`exists()` with a computed name,
+`attach()`, and `<<-`. Each is reported at its own line. The budget is fewer than 4 per
+file, from measuring real R packages, where `<<-` is common; `hoovr lint` reports it
+only if you name it: `select = ["dynamic-evaluation"]`.
+
+`hoovr metrics --include-dead-code` adds a `dead-code` row: the findings of
+`unreachable-code` and `unused-import`, counted per file and reported at their lines.
+It is off by default because it is slower and depends on which R packages are
+installed; without it the row shows `-` and is never checked, so pass the flag to both
+`--update-baseline` and `--check`. The budget is fewer than 2 per file, from measuring
+real R packages. `hoovr lint` can't measure it and refuses to select it: select
+`unreachable-code` and `unused-import` instead.
+
+`hoovr metrics --coverage cobertura.xml` adds two rows from a coverage report you
+already have, such as the one `covr::to_cobertura()` writes; HoovR never runs your
+tests. `coverage` is the share of each file's lines the tests ran, and a file under 80%
+is over budget. `crap` scores each function from its complexity and how much of it the
+tests ran: untested, branchy code scores high, and 25 or more is over budget. Both
+numbers are starting points, not yet measured against real R packages. Without
+`--coverage` the rows show `-` and are never checked, so pass it to both
+`--update-baseline` and `--check`. `hoovr lint` can't measure them and refuses to select
+them.
+
+`hoovr metrics --mutation muttest.json` adds a `surviving-mutants` row from a
+mutation-testing report, such as the one the muttest package's `JSONMutationReporter`
+writes: each small change to your code that no test noticed, listed at its line. HoovR
+never runs the tests itself. The budget is none per file, a starting point not yet
+measured against real R packages. Without `--mutation` the row shows `-` and is never
+checked; `hoovr lint` refuses to select it.
+
+Halstead difficulty no longer counts the `)` or `,` just after an inline function such
+as `sapply(x, function(i) i + 1)`, so some functions score slightly lower; a 1.0
+baseline still passes.
+
+The `hoovr metrics` scoreboard's name column is two characters wider, so check any
+script that cuts its text output by column. Its JSON output is unchanged apart from the
+additions above.
+
 ## 1.0.0
 
 The first release with a stability promise. From 1.0.0 on, a CI job keeps working

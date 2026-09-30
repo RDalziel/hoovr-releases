@@ -103,14 +103,23 @@ it converge. Only a file a fix changed is written.
 renaming it over the original, so an interrupted run leaves every file either as it
 was or finished, never half written. A read-only file is not written.
 
-`lint` also reports the code-health budgets (`HR9001`-`HR9007`, listed by
-`hoovr rules`) as findings. They answer to the same controls as rules: `--select` and
-`select` (a list that names no budget reports none), `--ignore` and `ignore`,
-`[lint.severity]` (a budget is a `warning` unless it sets one), and `# nolint` on the
-line the finding is reported at, which for a function is the line its definition
-starts on, and for `file-lines` is line 1. `--no-health` switches every budget off,
-and `[metrics]` sets the thresholds. `hoovr metrics` measures the same budgets and
-ignores these lint settings.
+`lint` also reports the code-health budgets (`HR9001`-`HR9010`, listed by
+`hoovr rules`) as findings; the budgets added in 1.1 are reported only when `select`
+names them. The budgets answer to the same controls as rules: `--select` and `select`
+(a list that names no budget reports none), `--ignore` and `ignore`, `[lint.severity]`
+(a budget is a `warning` unless it sets one), and `# nolint` on the line the finding is
+reported at, which for a function is the line its definition starts on, for
+`file-lines` is line 1, for `duplicate-bodies` is each copy's line, for
+`dynamic-evaluation` is each occurrence's line, and for `dead-code` in `hoovr metrics`
+is the rule finding's line. `--no-health` switches every budget off, and `[metrics]`
+sets the thresholds. `HR9011`, `dead-code`, is a `hoovr metrics --include-dead-code`
+row that `lint` cannot measure, and selecting it is an error. `HR9012` and `HR9013`,
+`coverage` and `crap`, are `hoovr metrics --coverage` rows that `lint` cannot measure
+either, and selecting them is an error. `HR9014`, `surviving-mutants`, is a `hoovr
+metrics --mutation` row refused the same way. `hoovr metrics` measures
+the same budgets and ignores these lint settings, except `dead-code`: its findings come
+from the `unreachable-code` and `unused-import` rules, so the project's `ignore`,
+`# nolint` and per-package settings apply to them as they do in `lint`.
 
 The output formats are described in [Output formats](#output-formats).
 
@@ -162,6 +171,50 @@ than R's own. R's own packages are built into HoovR and do not depend on the mac
 
 Libraries are looked for only when a rule that reads them runs: `hoovr lint --select
 assignment` reads none, and does not read the package's other files either.
+
+### Rules that read the whole package
+
+`unused-function` (`HR0022`, opt-in) reports a function assigned with `<-` or `=` at
+the top level of a file directly in a package's `R/` that the package neither exports
+nor uses. Whether anything uses a function is a question about the whole package, so
+for a file in `R/` the rule reads all of it, whichever files the run names: every R
+file in `R/`, excluded ones too, and every other file of the package as plain text,
+its compiled code included, apart from `.git` and what `.gitignore` leaves out. A
+package is a directory holding `DESCRIPTION` and `NAMESPACE`. It reads no installed R
+library. It does honour your global gitignore and `.git/info/exclude`, so a file one
+checkout leaves out is not read there.
+
+R code often reaches a function through its name as text, so any doubt counts as a
+use, and the rule misses some unused functions rather than report a used one. A
+function is used when its name is:
+
+- a word in the `NAMESPACE`, so every export, `S3method()` and `exportMethods()`
+  counts;
+- referred to anywhere in the package's R code, the function's own body included;
+- a word in any string or roxygen comment there: `do.call("f")`, `match.fun("f")`,
+  `get("f")`, `glue("{f()}")`, `@eval f()`;
+- a word in any other file: tests, vignettes, `inst/`, `data-raw/`, `man/`, scripts,
+  and compiled code, since C or C++ can call an R function by name;
+- built from a mentioned start that ends in `_` or `.`, or a mentioned end that begins
+  with one: `paste0("check_", type)` keeps every function whose name starts `check_`,
+  but `paste0("check", "_", type)` mentions neither, so it keeps none;
+- one of R's load hooks: `.onLoad`, `.onAttach`, `.onUnload`, `.onDetach`, `.Last.lib`
+  and `.First.lib`;
+- `release_bullets` or `release_questions`, which usethis's `use_release_issue()` and
+  devtools' `release()` call from the package's namespace;
+- a function whose body only names other packages' objects, such as
+  `function() { miniUI::miniPage }`: R CMD check reads every function's body to decide
+  which Imports a package uses, so this is how a package keeps one it uses indirectly;
+- `generic.class` for a generic that base R has, that the `NAMESPACE` registers or
+  imports, that `extra-s3-generics` lists, or that the package mentions;
+- not a syntactic name, such as `%+%` or `size<-`.
+
+It says nothing about a package whose `NAMESPACE` uses `exportPattern()` or does not
+parse, a package inside another package's directory (such as a test fixture), or a
+function defined in a subdirectory of `R/`, inside `if` or `local()`, with `assign()`,
+`->` or `<<-`, or by a call such as `memoise(function() ...)`. An `@export` tag counts
+once the `NAMESPACE` is regenerated from it. A function that only unused functions
+call is not reported.
 
 ### `hoovr format`
 
@@ -222,7 +275,40 @@ hoovr metrics --update-baseline            # write health-baseline.json
 hoovr metrics --check                      # exit 1 on a regression against the baseline
 hoovr metrics --check --baseline health/baseline.json   # a baseline kept somewhere else
 hoovr metrics --format json                # the baseline document itself
+hoovr metrics --include-dead-code          # also count unreachable code and unused library() calls
+hoovr metrics --coverage cobertura.xml    # add coverage and CRAP from a covr report
+hoovr metrics --mutation muttest.json      # add surviving mutants from a muttest report
 ```
+
+`--include-dead-code` fills in the `dead-code` row: the `unreachable-code` and
+`unused-import` findings in each file, counted as `hoovr lint --select
+unreachable-code,unused-import` would report them. It is off by default because it
+lints every file and reads the installed R libraries, so its count depends on the
+machine. Without it the row is unmeasured: it shows `-`, never passes or fails, and
+`--update-baseline` leaves it out, so pass the flag to both `--update-baseline` and
+`--check`.
+
+`--coverage FILE` fills in the `coverage` and `crap` rows from a Cobertura report, which
+covr writes with `covr::to_cobertura(covr::package_coverage(), filename =
+"cobertura.xml")`. HoovR reads the report and never runs your tests. The flag can be
+repeated for shards of one package, and a line counts as run if any report ran it. A
+measured file takes the report path its absolute path ends with at a `/`, the longest
+such match, never by file name alone. A report path two measured files end with goes to
+the package's own file when the other is in a package inside it, such as a test
+fixture; for two sibling packages it is an error, so measure one package at a time.
+Hit counts are read as numbers, so covr's `1e+05` is 100000, and a line whose count is
+not a number is an error. A report that records no coverable line, one
+that names none of the measured files, and a file that is not a Cobertura report are
+errors. LCOV is not read: covr has no LCOV writer. Without the flag both rows are
+unmeasured, so pass it to both `--update-baseline` and `--check`.
+
+`--mutation FILE` fills in the `surviving-mutants` row from a report in the
+mutation-testing-elements JSON schema, which muttest writes with `reporter =
+muttest::JSONMutationReporter$new(path = "muttest.json")`. HoovR reads the report and
+never runs your tests. The flag can be repeated, and the reports add up. Paths match as
+for `--coverage`. `Survived` and `NoCoverage` mutants count, each at the line it
+changed; `Killed` and `Timeout` were caught, and the other statuses are left out. A
+report that scored no mutant is an error. Without the flag the row is unmeasured.
 
 `--baseline` names the baseline file that `--check` reads and `--update-baseline`
 writes; it defaults to `health-baseline.json` in the working directory.
@@ -356,7 +442,8 @@ hoovr: /work/pkg/hoovr.toml: [format] line-width = 8 is out of range: it takes 2
   the default in place.
 - **A value of the wrong type or out of range is an error.** Widths (`line-width`,
   `line-length`, and `--line-length`) take 20 to 500, `indent-width` 1 to 16, and each
-  `[metrics]` budget 1 or more.
+  `[metrics]` budget 1 or more, `maintainability-index` and `coverage` above 0 and up to
+  100, `crap` above 0.
 - **An unknown rule name is an error.** Every entry in `select`, `ignore` and
   `[lint.severity]`, and in `--select` and `--ignore`, has to be a rule or budget code
   or name from `hoovr rules`. Case does not matter (`hr0001`, `Assignment`). An unknown
@@ -366,6 +453,13 @@ hoovr: /work/pkg/hoovr.toml: [format] line-width = 8 is out of range: it takes 2
   $ hoovr lint --select assigment
   hoovr: unknown rule `assigment` in --select (did you mean `assignment`?); `hoovr rules` lists them all
   ```
+
+  `dead-code` (`HR9011`) is a known name that `select` and `--select` still refuse:
+  `hoovr lint` cannot measure it, and it is measured by `hoovr metrics
+  --include-dead-code`. Select `unreachable-code` and `unused-import` instead.
+  `coverage` and `crap` (`HR9012`, `HR9013`) are refused the same way, since `hoovr
+  metrics --coverage` measures them, and so is `surviving-mutants` (`HR9014`), a
+  `hoovr metrics --mutation` row.
 
 ### Newer keys and older HoovR
 
@@ -402,7 +496,8 @@ exclude = ["**/R/RcppExports.R", "**/R/cpp11.R", "**/R/import-standalone-*.R"]
 Setting `exclude` replaces that list, so copy it in to keep it. `exclude = []` excludes
 nothing. A file named on the command line is used even when excluded: `hoovr format
 R/RcppExports.R` formats it. `lint` still reads an excluded file of a package for the
-functions it defines, because the package's other files call them.
+functions it defines, because the package's other files call them, and `unused-function`
+reads it for the functions it uses.
 
 In a run over several paths, the `hoovr.toml` found from the first applies to all of
 them (see the warning under [Which file applies](#which-file-applies)). For a path
@@ -477,7 +572,7 @@ keys HoovR accepts, and the worked example to the same set.
 | `[lint.undesirable-functions]` | built-in list | Function names mapped to the reason `undesirable-function` gives. Setting it replaces the built-in list; an empty table flags nothing. |
 | `[lint] respect-nolint` | `true` | Honour `# nolint` comments. |
 | `[lint] allowed-magic-numbers` | `["-1", "0", "1", "2"]` | Numbers `magic-number` accepts as written, `L` suffix dropped. |
-| `[lint] extra-s3-generics` | `[]` | S3 generics the project defines, so `object-name` accepts their methods' dotted names. |
+| `[lint] extra-s3-generics` | `[]` | S3 generics the project defines, so `object-name` accepts their methods' dotted names and `unused-function` counts their methods as used. |
 | `[lint] interpolating-functions` | glue and cli | Functions that read `{name}` out of their strings, so `unused-local` counts those names as used. Setting it replaces the list. |
 | `[lint] lintr-compatible` | `false` | Reproduce lintr's findings where HoovR differs on purpose, as `lint --profile lintr-compatible` does. |
 | `[lint] r-libraries` | `true` | Read the R libraries installed on the machine; `false` reads none, as `lint --no-r-libs` does. See [Installed packages](#installed-packages). |
@@ -488,9 +583,18 @@ keys HoovR accepts, and the worked example to the same set.
 | `[metrics] function-lines` | `100` | Lines per function. |
 | `[metrics] file-lines` | `500` | Non-blank lines per file. |
 | `[metrics] halstead-difficulty` | `30` | Halstead difficulty per function. |
+| `[metrics] maintainability-index` | `31` | Maintainability index per function. A floor: below it is over. |
+| `[metrics] duplicate-bodies` | `1` | Copies of a function body per file; 1 means none. Reported at each copy's line. |
+| `[metrics] dynamic-evaluation` | `4` | `eval(parse())`, `get()`/`assign()` of a computed name, `attach()` and `<<-` per file. Reported at each one's line. |
+| `[metrics] dead-code` | `2` | `unreachable-code` and `unused-import` findings per file. Measured only by `hoovr metrics --include-dead-code`. |
+| `[metrics] coverage` | `80` | Line coverage per file, in percent, from `hoovr metrics --coverage`. A floor: below it is over. |
+| `[metrics] crap` | `25` | CRAP per function, from `hoovr metrics --coverage`. |
+| `[metrics] surviving-mutants` | `1` | Mutants the tests did not catch per file, from `hoovr metrics --mutation`; 1 means none. Reported at each one's line. |
 
-The seven `[metrics]` budgets are exclusive upper bounds: a function scoring exactly
-the budget is over it. [Code health](code-health.md) defines each measure.
+The `[metrics]` budgets are exclusive upper bounds: a function scoring exactly the
+budget is over it. The exceptions are `maintainability-index` and `coverage`, floors: a
+function, or for coverage a file, scoring below it is over, and one scoring exactly it
+is within. [Code health](code-health.md) defines each measure.
 
 The layouts marked experimental are those of the `air-compatible` profile, and share
 its status: outside the 1.x layout promise, so they may change in any release. The keys
