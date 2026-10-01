@@ -216,9 +216,11 @@ hoovr metrics --check</pre>
   <section id="measured">
     <h2>Measured, not claimed</h2>
     <p class="sub">Every figure comes from running lintr and styler themselves on the same
-      files. <a href="https://github.com/RDalziel/hoovr-releases/blob/main/docs/measurements.md">Measurements</a>
+      files, measured on HoovR 1.0.0; 1.1 has not been re-measured.
+      <a href="https://github.com/RDalziel/hoovr-releases/blob/main/docs/measurements.md">Measurements</a>
       gives the method and the caveats.</p>
     <div class="stats">
+      <div class="stat"><div class="n">0.25 s</div><div class="l">to lint 2,422 R files, 292,760 lines across twelve packages, code-health budgets off (0.10 s to check their formatting)</div></div>
       <div class="stat"><div class="n">95.4%</div><div class="l">of 2,414 real R files byte-identical with styler 1.11.0, using HoovR's styler-compatible profile, across twelve packages</div></div>
       <div class="stat"><div class="n">99.55%</div><div class="l">of 13,925 real lintr 3.4.0 findings agreed, using HoovR's lintr-compatible profile (98.64% with its default profile), across eleven packages</div></div>
       <div class="stat"><div class="n">195–697×</div><div class="l">faster than lintr, on four tidyverse packages</div></div>

@@ -2,7 +2,10 @@
 
 A fast formatter, linter and code-health scorer for **R**, written in Rust. One
 executable with nothing else to install: it applies lintr's default rules and styler's
-layout, and runs two to three orders of magnitude faster than either.
+layout, and runs two to three orders of magnitude faster than either: on HoovR 1.0.0
+it linted 2,422 R files, 292,760 lines from twelve packages, in 0.25 s with the
+code-health budgets off, and checked
+their formatting in 0.10 s ([measurements](https://github.com/RDalziel/hoovr-releases/blob/main/docs/measurements.md)).
 
 ```console
 $ hoovr lint R/
