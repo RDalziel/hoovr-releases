@@ -5,6 +5,16 @@ What changed in each release, in plain English, newest first. Downloads are on t
 
 ## Unreleased
 
+## 1.1.1
+
+`lintr-compatible` and `styler-compatible` are still matched against lintr 3.4.0 and
+styler 1.11.0, as in 1.1.0.
+
+Linting a very large single file is much faster. A 67,000-line file took 12 seconds in
+1.1.0 and now takes a third of a second, because some rules did work that grew with the
+square of the file's length. Ordinary files were not noticeably affected, and every
+finding is exactly the same as before.
+
 ## 1.1.0
 
 `lintr-compatible` and `styler-compatible` are still matched against lintr 3.4.0 and
